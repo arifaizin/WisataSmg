@@ -1,6 +1,6 @@
 package org.sandec.wisatasmg.networking;
 
-import org.sandec.wisatasmg.ListWisataModel;
+import org.sandec.wisatasmg.model.ListWisataModel;
 
 import retrofit2.Call;
 import retrofit2.http.GET;
