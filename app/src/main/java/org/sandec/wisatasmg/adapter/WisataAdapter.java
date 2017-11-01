@@ -47,6 +47,7 @@ public class WisataAdapter extends RecyclerView.Adapter<WisataAdapter.MyViewHold
         holder.tvAlamatWisata.setText(listData.get(position).getAlamatWisata());
         Glide.with(context)
                 .load("http://52.187.117.60/wisata_semarang/img/wisata/"+listData.get(position).getGambarWisata())
+                .placeholder(R.drawable.no_image_found)
                 .error(R.drawable.no_image_found)
                 .into(holder.ivGambarWisata);
 
