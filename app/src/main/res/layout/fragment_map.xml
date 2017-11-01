@@ -13,4 +13,24 @@
         android:layout_height="match_parent"
         tools:context="org.sandec.wisatasmg.MapsActivity" />
 
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:layout_gravity="bottom"
+        android:orientation="vertical"
+        android:background="@color/cardview_light_background">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/tv_map_jarak"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/tv_map_waktu"/>
+
+
+    </LinearLayout>
+
 </FrameLayout>

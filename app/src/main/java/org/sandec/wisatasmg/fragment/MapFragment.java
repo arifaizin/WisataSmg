@@ -3,7 +3,9 @@ package org.sandec.wisatasmg.fragment;
 
 import android.Manifest;
 import android.app.ProgressDialog;
+import android.content.Intent;
 import android.graphics.Point;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
@@ -12,6 +14,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -31,11 +34,12 @@ import org.sandec.wisatasmg.adapter.WisataAdapter;
 import org.sandec.wisatasmg.drawroutemap.DrawMarker;
 import org.sandec.wisatasmg.drawroutemap.DrawRouteMaps;
 import org.sandec.wisatasmg.drawroutemap.FetchUrl;
-import org.sandec.wisatasmg.helper.GPSTracker;
+import org.sandec.wisatasmg.helper.GPStrack;
 import org.sandec.wisatasmg.model.ListWisataModel;
 import org.sandec.wisatasmg.model.WisataModel;
 import org.sandec.wisatasmg.networking.ApiServices;
 import org.sandec.wisatasmg.networking.RetrofitConfig;
+import org.w3c.dom.Text;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -43,6 +47,7 @@ import java.util.List;
 
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
+import pub.devrel.easypermissions.AfterPermissionGranted;
 import pub.devrel.easypermissions.EasyPermissions;
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -53,17 +58,23 @@ import static android.content.ContentValues.TAG;
 /**
  * A simple {@link Fragment} subclass.
  */
-public class MapFragment extends Fragment implements OnMapReadyCallback, EasyPermissions.PermissionCallbacks {
+public class MapFragment extends Fragment implements OnMapReadyCallback {
+
+    private static final int RC_CAMERA_AND_LOCATION = 100;
 
     private GoogleMap mMap;
     ArrayList<WisataModel> listData;
 
-    final Integer RC_CAMERA_AND_LOCATION = 101;
 
     String jarak;
     String waktu;
 
-    GPSTracker gpsTracker;
+    Double latMe;
+    Double lngMe;
+    GPStrack gpStrack;
+    TextView tvWaktu;
+    TextView tvJarak;
+
 
 
     public MapFragment() {
@@ -71,7 +82,13 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, EasyPer
     }
 
 
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
+        // Forward results to EasyPermissions
+        EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this);
+    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -83,7 +100,13 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, EasyPer
         mapFragment.getMapAsync(this);
         listData = new ArrayList<>();
 
-        methodRequiresTwoPermission();
+
+        gpStrack = new GPStrack(getContext());
+
+        tvWaktu = (TextView) view.findViewById(R.id.tv_map_waktu);
+        tvJarak = (TextView) view.findViewById(R.id.tv_map_jarak);
+
+
 
         return view;
     }
@@ -93,54 +116,59 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, EasyPer
 
         mMap = googleMap;
 
-        LatLng origin = new LatLng(-7.788969, 110.338382);
-        LatLng destination = new LatLng(-7.781200, 110.349709);
-        DrawRouteMaps.getInstance(getContext())
-                .draw(origin, destination, mMap);
-
-        LatLngBounds bounds = new LatLngBounds.Builder()
-                .include(origin)
-                .include(destination).build();
-
-
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(origin,15));
-        getLocation(origin, destination, mMap);
-
         ambilData();
+
+
 
         mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
             @Override
             public boolean onMarkerClick(Marker marker) {
-                return false;
+
+
+                mMap.clear();
+                refreshMarker();
+
+                String[] perms = {Manifest.permission.ACCESS_FINE_LOCATION};
+                if (EasyPermissions.hasPermissions(getContext(), perms)) {
+
+                    Log.d("MAP", "gagal map");
+                    latMe = gpStrack.getLatitude();
+                    lngMe = gpStrack.getLongitude();
+
+
+                } else {
+                    // Do not have permissions, request them now
+                    EasyPermissions.requestPermissions(getActivity(), "Butuh Lokasi",
+                            RC_CAMERA_AND_LOCATION, perms);
+                    Log.d("MAP", "sukses map");
+//                    progress.hide();
+                    return false;
+                }
+
+                Log.d("MAP", "sukses map");
+
+                LatLng origin = new LatLng(latMe, lngMe);
+                LatLng destination = marker.getPosition();
+
+                DrawRouteMaps.getInstance(getContext())
+                        .draw(origin, destination, mMap);
+
+                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(origin,15));
+                getLocation(origin, destination, mMap);
+
+//                progress.hide();
+
+                return true;
+
             }
         });
 
-        mMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
-            @Override
-            public void onInfoWindowClick(Marker marker) {
-
-            }
-        });
-
-        gpsTracker = new GPSTracker(getContext());
-
-        Toast.makeText(getActivity(),gpsTracker.getLatitude()+"",Toast.LENGTH_SHORT).show();
 
 
 
     }
 
-    private void methodRequiresTwoPermission() {
-        String[] perms = {Manifest.permission.CAMERA, Manifest.permission.ACCESS_FINE_LOCATION};
-        if (EasyPermissions.hasPermissions(getActivity(), perms)) {
-            // Already have permission, do the thing
-            // ...
-        } else {
-            // Do not have permissions, request them now
-            EasyPermissions.requestPermissions(this, "Butuh Permission",
-                    RC_CAMERA_AND_LOCATION, perms);
-        }
-    }
+
 
     private void ambilData() {
         final ProgressDialog progress = new ProgressDialog(getActivity());
@@ -169,6 +197,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, EasyPer
 
 
 
+
                             Log.d(TAG, "onResponse: " + listData.get(i).getGambarWisata());
                         }
                     } else {
@@ -186,7 +215,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, EasyPer
         });
     }
 
-    private void getLocation(final LatLng origin, LatLng destination, final GoogleMap map){
+    private void getLocation(final LatLng origin, final LatLng destination, final GoogleMap map){
         OkHttpClient client = new OkHttpClient();
 
         String url_route = FetchUrl.getUrl(origin, destination);
@@ -243,6 +272,20 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, EasyPer
                                 .position(origin)
                                 .snippet(jarak + " " + waktu));
 
+                        tvJarak.setText("Jarak: "+jarak);
+
+                        tvJarak.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View view) {
+                                Uri gmmIntentUri = Uri.parse("google.navigation:q="+String.valueOf(destination.latitude)+","+String.valueOf(destination.longitude));
+                                Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
+                                mapIntent.setPackage("com.google.android.apps.maps");
+                                startActivity(mapIntent);
+                            }
+                        });
+
+                        tvWaktu.setText("Waktu: "+waktu );
+
                     }
                 });
 
@@ -254,24 +297,22 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, EasyPer
 
     }
 
+    private void refreshMarker(){
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        for (int i = 0; i < listData.size(); i++) {
 
-        // Forward results to EasyPermissions
-        EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this);
+            Double lat = Double.valueOf(listData.get(i).getLatitudeWisata());
+            Double lng = Double.valueOf(listData.get(i).getLongitudeWisata());
+
+            LatLng sydney = new LatLng(lat,lng);
+            mMap.addMarker(new MarkerOptions().position(sydney).title(listData.get(i).getNamaWisata()));
+
+            Log.d(TAG, "onResponse: " + listData.get(i).getGambarWisata());
+
+        }
+
     }
 
-    @Override
-    public void onPermissionsGranted(int requestCode, List<String> list) {
-        // Some permissions have been granted
-        // ...
-    }
 
-    @Override
-    public void onPermissionsDenied(int requestCode, List<String> list) {
-        // Some permissions have been denied
-        // ...
-    }
+
 }
