@@ -17,11 +17,7 @@ import android.provider.Settings;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 
-/**
- * Created by ariaseta on 01/11/17.
- */
-
-public class GPSTracker extends Service implements LocationListener {
+public class GPStrack extends Service implements LocationListener {
 
     private static final String TAG = "GPStrack";
     private Context context = null;
@@ -36,7 +32,7 @@ public class GPSTracker extends Service implements LocationListener {
     protected LocationManager locationManager;
     public static final String NEW_POSITION = "newPosition";
 
-    public GPSTracker(Context c) {
+    public GPStrack(Context c) {
         this.context = c;
 
         getLocation();
