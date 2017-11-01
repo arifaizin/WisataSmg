@@ -19,9 +19,6 @@
                 android:id="@+id/iv_item_gambar"
                 android:layout_width="match_parent"
                 android:layout_height="200dp"
-                android:background="@drawable/examplewisata"
-                android:backgroundTint="#999999"
-                android:backgroundTintMode="multiply"
                 android:scaleType="centerCrop" />
 
             <TextView

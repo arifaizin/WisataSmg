@@ -15,7 +15,9 @@ import android.view.Menu;
 import android.view.MenuItem;
 
 import org.sandec.wisatasmg.R;
+import org.sandec.wisatasmg.fragment.FavoriteFragment;
 import org.sandec.wisatasmg.fragment.HomeFragment;
+import org.sandec.wisatasmg.fragment.MapFragment;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
@@ -96,9 +98,18 @@ public class MainActivity extends AppCompatActivity
                    .replace(R.id.layout_untuk_fragment,new HomeFragment())
                    .commit();
         } else if (id == R.id.nav_favorit) {
-
+            FragmentManager manager = getSupportFragmentManager();
+            manager.beginTransaction()
+                    .replace(R.id.layout_untuk_fragment,new FavoriteFragment())
+                    .commit();
 
         } else if (id == R.id.nav_peta) {
+            FragmentManager manager = getSupportFragmentManager();
+            manager.beginTransaction()
+                    .replace(R.id.layout_untuk_fragment,new MapFragment())
+                    .commit();
+
+
 
         } else if (id == R.id.nav_tambah) {
 
